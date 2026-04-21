@@ -1,0 +1,102 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: happyteach
+      POSTGRES_PASSWORD: happyteach_secret
+      POSTGRES_DB: happyteach
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U happyteach']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    ports:
+      - '3001:3001'
+    environment:
+      DATABASE_URL: postgresql://happyteach:happyteach_secret@postgres:5432/happyteach
+      REDIS_URL: redis://redis:6379
+      PORT: 3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  lesson:
+    build:
+      context: ./services/lesson
+      dockerfile: Dockerfile
+    ports:
+      - '3002:3002'
+    environment:
+      DATABASE_URL: postgresql://happyteach:happyteach_secret@postgres:5432/happyteach
+      PORT: 3002
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  exam:
+    build:
+      context: ./services/exam
+      dockerfile: Dockerfile
+    ports:
+      - '3003:3003'
+    environment:
+      DATABASE_URL: postgresql://happyteach:happyteach_secret@postgres:5432/happyteach
+      PORT: 3003
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  grading:
+    build:
+      context: ./services/grading
+      dockerfile: Dockerfile
+    ports:
+      - '3004:3004'
+    environment:
+      DATABASE_URL: postgresql://happyteach:happyteach_secret@postgres:5432/happyteach
+      PORT: 3004
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ai:
+    build:
+      context: ./services/ai
+      dockerfile: Dockerfile
+    ports:
+      - '3005:3005'
+    environment:
+      DATABASE_URL: postgresql://happyteach:happyteach_secret@postgres:5432/happyteach
+      PORT: 3005
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

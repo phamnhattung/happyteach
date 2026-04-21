@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "HappyTeach",
+    "slug": "happyteach",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "happyteach",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F59E0B"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.happyteach.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "HappyTeach cần camera để quét bài thi",
+        "NSPhotoLibraryUsageDescription": "HappyTeach cần truy cập ảnh để tải lên tài liệu"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#F59E0B"
+      },
+      "package": "com.happyteach.app",
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      ["expo-local-authentication", {
+        "faceIDPermission": "HappyTeach dùng Face ID để đăng nhập nhanh"
+      }]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

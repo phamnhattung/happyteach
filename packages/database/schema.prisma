@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  TEACHER
+  STUDENT
+  SCHOOL_ADMIN
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String?
+  name         String
+  role         Role      @default(TEACHER)
+  schoolId     String?
+  avatarUrl    String?
+  isVerified   Boolean   @default(false)
+  googleId     String?   @unique
+  appleId      String?   @unique
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  passwordResets  PasswordReset[]
+  auditLogs       AuditLog[]
+  lessons         Lesson[]
+  exams           Exam[]
+  documents       TeacherDocument[]
+  teacherMemory   TeacherMemory?
+
+  @@index([email])
+  @@index([deletedAt])
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Lesson {
+  id        String    @id @default(cuid())
+  title     String
+  subject   String
+  grade     String
+  content   Json
+  teacherId String
+  teacher   User      @relation(fields: [teacherId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([teacherId])
+  @@index([deletedAt])
+}
+
+model Exam {
+  id          String       @id @default(cuid())
+  title       String
+  subject     String
+  grade       String
+  questions   Json
+  teacherId   String
+  teacher     User         @relation(fields: [teacherId], references: [id])
+  submissions Submission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+
+  @@index([teacherId])
+  @@index([deletedAt])
+}
+
+model Submission {
+  id        String    @id @default(cuid())
+  examId    String
+  exam      Exam      @relation(fields: [examId], references: [id])
+  studentId String
+  answers   Json
+  score     Float?
+  gradedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([examId])
+  @@index([studentId])
+  @@index([createdAt])
+}
+
+model TeacherMemory {
+  id           String   @id @default(cuid())
+  teacherId    String   @unique
+  teacher      User     @relation(fields: [teacherId], references: [id])
+  subjects     String[]
+  styleProfile Json     @default("{}")
+  updatedAt    DateTime @updatedAt
+
+  @@index([teacherId])
+}
+
+model TeacherDocument {
+  id        String    @id @default(cuid())
+  teacherId String
+  teacher   User      @relation(fields: [teacherId], references: [id])
+  filename  String
+  s3Key     String
+  mimeType  String
+  sizeBytes Int
+  processed Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  @@index([teacherId])
+  @@index([deletedAt])
+}

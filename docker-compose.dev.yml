@@ -1,0 +1,106 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: happyteach
+      POSTGRES_PASSWORD: happyteach_secret
+      POSTGRES_DB: happyteach
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U happyteach']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    ports:
+      - '3001:3001'
+    volumes:
+      - ./services/auth/src:/app/src
+    environment:
+      DATABASE_URL: postgresql://happyteach:happyteach_secret@postgres:5432/happyteach
+      PORT: 3001
+      NODE_ENV: development
+    command: pnpm dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  lesson:
+    build:
+      context: ./services/lesson
+      dockerfile: Dockerfile
+    ports:
+      - '3002:3002'
+    volumes:
+      - ./services/lesson/src:/app/src
+    environment:
+      DATABASE_URL: postgresql://happyteach:happyteach_secret@postgres:5432/happyteach
+      PORT: 3002
+      NODE_ENV: development
+    command: pnpm dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  exam:
+    build:
+      context: ./services/exam
+      dockerfile: Dockerfile
+    ports:
+      - '3003:3003'
+    volumes:
+      - ./services/exam/src:/app/src
+    environment:
+      DATABASE_URL: postgresql://happyteach:happyteach_secret@postgres:5432/happyteach
+      PORT: 3003
+      NODE_ENV: development
+    command: pnpm dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  grading:
+    build:
+      context: ./services/grading
+      dockerfile: Dockerfile
+    ports:
+      - '3004:3004'
+    volumes:
+      - ./services/grading/src:/app/src
+    environment:
+      DATABASE_URL: postgresql://happyteach:happyteach_secret@postgres:5432/happyteach
+      PORT: 3004
+      NODE_ENV: development
+    command: pnpm dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ai:
+    build:
+      context: ./services/ai
+      dockerfile: Dockerfile
+    ports:
+      - '3005:3005'
+    volumes:
+      - ./services/ai/src:/app/src
+    environment:
+      DATABASE_URL: postgresql://happyteach:happyteach_secret@postgres:5432/happyteach
+      PORT: 3005
+      NODE_ENV: development
+    command: pnpm dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

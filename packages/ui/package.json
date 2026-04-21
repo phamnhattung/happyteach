@@ -1,0 +1,13 @@
+{
+  "name": "@happyteach/ui",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./src/index.ts",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

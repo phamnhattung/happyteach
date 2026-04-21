@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const o={hookSpecificOutput:{hookEventName:'PreToolUse',additionalContext:'SKILL ENFORCEMENT: Before writing this code, verify it meets .claude/skills/SKILL.md. Check: (1) TypeScript strict — no any, branded IDs, Zod schema-first. (2) Layer rules — NestJS Controller→Service→Repository, React Native FlashList+Reanimated UI thread, AIProviderService only. (3) Security — ownership check, signed URLs, parameterized SQL, audit log on writes. (4) Quality gates — typecheck+lint+test must pass, no @ts-ignore or eslint-disable.'}}; console.log(JSON.stringify(o));\" 2>/dev/null || true",
+            "statusMessage": "Checking skill standards..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('fs');const p='D:/Project/Vibe/SESSION_STATE.md';if(fs.existsSync(p)){const c=fs.readFileSync(p,'utf8');const d=new Date().toISOString().slice(0,16).replace('T',' ');fs.writeFileSync(p,c.replace(/> Auto-updated.*/, '> Auto-updated by hook. Last saved: '+d));}const o={hookSpecificOutput:{hookEventName:'Stop',additionalContext:'CHECKPOINT REMINDER: If you completed significant work this turn (created or edited files, finished a phase), update SESSION_STATE.md now by running the /checkpoint skill.'}};console.log(JSON.stringify(o));\" 2>/dev/null || true",
+            "statusMessage": "Saving session state..."
+          }
+        ]
+      }
+    ]
+  }
+}
