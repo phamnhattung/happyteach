@@ -12,21 +12,21 @@ export class AIProviderService {
     private openai: OpenAIProvider,
   ) {}
 
-  async *generateLessonStream(input: GenerateLessonInput, style?: string): AsyncIterable<string> {
+  async *generateLessonStream(input: GenerateLessonInput, memoryContext?: string): AsyncIterable<string> {
     try {
-      yield* this.claude.generateLessonStream(input, style)
+      yield* this.claude.generateLessonStream(input, memoryContext)
     } catch (err) {
       this.logger.warn(`Claude failed, falling back to OpenAI: ${(err as Error).message}`)
-      yield* this.openai.generateLessonStream(input, style)
+      yield* this.openai.generateLessonStream(input, memoryContext)
     }
   }
 
-  async generateLessonFull(input: GenerateLessonInput, style?: string): Promise<LessonPlan> {
+  async generateLessonFull(input: GenerateLessonInput, memoryContext?: string): Promise<LessonPlan> {
     try {
-      return await this.claude.generateLessonFull(input, style)
+      return await this.claude.generateLessonFull(input, memoryContext)
     } catch (err) {
       this.logger.warn(`Claude failed, falling back to OpenAI: ${(err as Error).message}`)
-      return this.openai.generateLessonFull(input, style)
+      return this.openai.generateLessonFull(input, memoryContext)
     }
   }
 }

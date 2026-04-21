@@ -1,6 +1,6 @@
 # SESSION_STATE.md
 
-> Auto-updated by hook. Last saved: 2026-04-21 02:27
+> Auto-updated by hook. Last saved: 2026-04-21 02:34
 
 ---
 
@@ -8,10 +8,10 @@
 
 | Field | Value |
 |---|---|
-| Phase | 7 — Exam Generator |
-| Active task | Lesson planner complete; exam service is a stub |
+| Phase | 10 — Production Deployment |
+| Active task | Phase 9 complete; K8s manifests + CI/CD next |
 | Blocked | No |
-| Next action | Run `/exam-generator` to build exam generation backend + mobile screens |
+| Next action | Run `/deploy` to generate Kubernetes manifests, HPA, Ingress, GitHub Actions deploy pipeline |
 
 ---
 
@@ -26,9 +26,9 @@
 | 4 | Auth service | `/auth` | Sonnet 4.6 | ✅ done |
 | 5 | AI provider service | `/gen-service ai` | Opus 4.7 | ✅ done — in lesson service |
 | 6 | Lesson planner | `/lesson-planner` | Sonnet 4.6 | ✅ done |
-| 7 | Exam generator | `/exam-generator` | Sonnet 4.6 | ⬜ pending — service stub only |
-| 8 | Grading module | `/grading` | Sonnet 4.6 | ⬜ pending — service stub only |
-| 9 | Personalization | inline in ai-service | Opus 4.7 | ⬜ pending |
+| 7 | Exam generator | `/exam-generator` | Sonnet 4.6 | ✅ done |
+| 8 | Grading module | `/grading` | Sonnet 4.6 | ✅ done |
+| 9 | Personalization | inline in ai-service | Opus 4.7 | ✅ done |
 | 10 | Deploy | `/deploy` | Sonnet 4.6 | ⬜ pending |
 | 11 | Security review | `/security-review` | Opus 4.7 | ⬜ pending |
 
@@ -128,9 +128,40 @@ Status legend: ⬜ pending | 🔄 in progress | ✅ done | ❌ blocked
 | `services/lesson/src/lessons/dto/*.ts` | create, update, generate DTOs |
 | `services/lesson/src/auth/jwt-auth.guard.ts` | JWT guard for lesson service |
 
+### Phase 7 — Exam Generator ✅
+| File | Purpose |
+|---|---|
+| `services/exam/src/ai/claude.provider.ts` | Claude exam generation (8192 tokens, Vietnamese prompts) |
+| `services/exam/src/ai/openai.provider.ts` | OpenAI fallback |
+| `services/exam/src/ai/ai-provider.service.ts` | Provider with auto-fallback |
+| `services/exam/src/exams/exams.service.ts` | Full CRUD + publish + duplicate + A/B/C versioning |
+| `services/exam/src/exams/exams.controller.ts` | All endpoints including 3 PDF routes |
+| `services/exam/src/pdf/pdf.service.ts` | Puppeteer: student PDF, bubble sheet (2-col layout), answer key (watermarked) |
+| `packages/database/schema.prisma` | Extended Exam model (status, duration, chapter, versions) + AiGradingResult model |
+| `apps/mobile/src/app/(tabs)/exams/index.tsx` | Segmented exam list (Draft/Published/Archived) |
+| `apps/mobile/src/app/(tabs)/exams/generate.tsx` | 4-step wizard with question type steppers |
+| `apps/mobile/src/app/(tabs)/exams/[id].tsx` | Exam detail with expandable question cards + publish flow |
+| `apps/mobile/src/app/(tabs)/exams/[id]/export.tsx` | Export cards: student PDF, bubble sheet, answer key |
+
+### Phase 8 — Grading Module ✅
+| File | Purpose |
+|---|---|
+| `services/grading/src/ai/grading-ai.service.ts` | Claude Vision OCR + open answer + essay grading |
+| `services/grading/src/submissions/bubble-scanner.service.ts` | Pure-JS bubble detection (sharp + jsQR + AI fallback) |
+| `services/grading/src/submissions/submissions.service.ts` | Phase 1+2+3 pipeline, approval tx, audit log |
+| `services/grading/src/submissions/submissions.controller.ts` | All scan + approve + manual endpoints |
+| `services/grading/src/gradebook/gradebook.service.ts` | Gradebook data, Excel (ExcelJS), PDF (Puppeteer) |
+| `services/grading/src/gradebook/gradebook.controller.ts` | Gradebook + export endpoints |
+| `services/grading/src/gateway/grading.gateway.ts` | WebSocket gateway (scan.bubble.done, scan.ai.done, grading.complete) |
+| `services/grading/src/main.ts` | Fastify + @fastify/multipart + IoAdapter |
+| `apps/mobile/src/app/(tabs)/grading/_layout.tsx` | Stack with fullScreenModal scan screens |
+| `apps/mobile/src/app/(tabs)/grading/index.tsx` | Exam selector + student list + status chips |
+| `apps/mobile/src/app/(tabs)/grading/scan/bubble.tsx` | Phase 1 camera, corner indicators, result view |
+| `apps/mobile/src/app/(tabs)/grading/scan/answers.tsx` | Phase 2 multi-page camera, AI loading state |
+| `apps/mobile/src/app/(tabs)/grading/scan/approve.tsx` | Phase 3 approval: per-question cards, stepper, duyệt tất cả |
+| `apps/mobile/src/app/(tabs)/grading/gradebook/all.tsx` | Color-coded score table, stats modal, Excel/PDF export |
+
 ### Service stubs (no business logic yet)
-- `services/exam/src/` — app.module.ts + main.ts only
-- `services/grading/src/` — app.module.ts + main.ts only
 - `services/ai/src/` — app.module.ts + main.ts only
 
 ---
@@ -142,8 +173,6 @@ Status legend: ⬜ pending | 🔄 in progress | ✅ done | ❌ blocked
 | Lesson SSE streaming endpoint | 6 | `/lesson-planner` |
 | Lesson PDF export (puppeteer) | 6 | `/lesson-planner` |
 | Teacher memory update after lesson save | 6 | `/lesson-planner` |
-| Full exam generation backend | 7 | `/exam-generator` |
-| Exam PDF export + versioning A/B/C | 7 | `/exam-generator` |
 | Camera bubble sheet scanner | 8 | `/grading` |
 | Essay OCR grading | 8 | `/grading` |
 | Gradebook endpoints + Excel export | 8 | `/grading` |

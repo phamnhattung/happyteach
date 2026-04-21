@@ -19,7 +19,7 @@ export default function ProfileScreen() {
 
   const menuItems: MenuItem[] = [
     { icon: 'user', label: 'Thông tin cá nhân', route: '/profile/edit' },
-    { icon: 'upload', label: 'Tài liệu cá nhân hóa', route: '/profile/documents' },
+    { icon: 'cpu', label: 'Cá nhân hóa AI', route: '/profile/personalization' },
     { icon: 'bell', label: 'Thông báo', route: '/profile/notifications' },
     { icon: 'lock', label: 'Bảo mật', route: '/profile/security' },
     { icon: 'help-circle', label: 'Trợ giúp', route: '/profile/help' },

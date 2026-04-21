@@ -82,37 +82,99 @@ model Lesson {
   @@index([deletedAt])
 }
 
+enum ExamStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SubmissionStatus {
+  PENDING
+  KEYED_DONE
+  PENDING_APPROVAL
+  GRADED
+}
+
 model Exam {
-  id          String       @id @default(cuid())
-  title       String
-  subject     String
-  grade       String
-  questions   Json
-  teacherId   String
-  teacher     User         @relation(fields: [teacherId], references: [id])
-  submissions Submission[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
+  id           String       @id @default(cuid())
+  title        String
+  subject      String
+  grade        String
+  chapter      String?
+  duration     Int          @default(45)
+  instructions String?
+  status       ExamStatus   @default(DRAFT)
+  questions    Json
+  versions     Json?
+  teacherId    String
+  teacher      User         @relation(fields: [teacherId], references: [id])
+  submissions  Submission[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
 
   @@index([teacherId])
+  @@index([status])
   @@index([deletedAt])
 }
 
 model Submission {
-  id        String    @id @default(cuid())
-  examId    String
-  exam      Exam      @relation(fields: [examId], references: [id])
-  studentId String
-  answers   Json
-  score     Float?
-  gradedAt  DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id            String           @id @default(cuid())
+  examId        String
+  exam          Exam             @relation(fields: [examId], references: [id])
+  studentId     String
+  studentName   String?
+  teacherId     String?
+  status        SubmissionStatus @default(PENDING)
+  keyedScore    Float?
+  aiScore       Float?
+  finalScore    Float?
+  keyedResults  Json?
+  aiResults     AiGradingResult[]
+  score         Score?
+  gradedAt      DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   @@index([examId])
   @@index([studentId])
+  @@index([teacherId])
+  @@index([status])
   @@index([createdAt])
+}
+
+model Score {
+  id           String     @id @default(cuid())
+  submissionId String     @unique
+  submission   Submission @relation(fields: [submissionId], references: [id])
+  studentId    String
+  examId       String
+  value        Float
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([studentId])
+  @@index([examId])
+}
+
+model AiGradingResult {
+  id             String     @id @default(cuid())
+  submissionId   String
+  submission     Submission @relation(fields: [submissionId], references: [id])
+  questionId     String
+  ocrText        String     @default("")
+  suggestedScore Float
+  maxScore       Float
+  reasoning      String
+  criteriaScores Json?
+  status         String     @default("pending_approval")
+  approvedScore  Float?
+  teacherNote    String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@unique([submissionId, questionId])
+  @@index([submissionId])
 }
 
 model TeacherMemory {

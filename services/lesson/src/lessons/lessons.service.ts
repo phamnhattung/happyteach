@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common'
 import { PrismaClient } from '@prisma/client'
 import { AIProviderService } from '../ai/ai-provider.service'
+import { TeacherMemoryService } from '../memory/teacher-memory.service'
 import type { CreateLessonDto } from './dto/create-lesson.dto'
 import type { UpdateLessonDto } from './dto/update-lesson.dto'
 import type { GenerateLessonDto } from './dto/generate-lesson.dto'
@@ -10,18 +11,19 @@ import type { LessonPlan } from '@happyteach/types'
 export class LessonsService {
   private prisma = new PrismaClient()
 
-  constructor(private ai: AIProviderService) {}
+  constructor(
+    private ai: AIProviderService,
+    private memory: TeacherMemoryService,
+  ) {}
 
   async *generateStream(dto: GenerateLessonDto, teacherId: string): AsyncIterable<string> {
-    const memory = await this.prisma.teacherMemory.findUnique({ where: { teacherId } })
-    const style = (memory?.styleProfile as Record<string, string>)?.style ?? dto.style
-    yield* this.ai.generateLessonStream(dto, style)
+    const memoryContext = await this.memory.getContext(teacherId)
+    yield* this.ai.generateLessonStream(dto, memoryContext || undefined)
   }
 
   async generateFull(dto: GenerateLessonDto, teacherId: string): Promise<LessonPlan> {
-    const memory = await this.prisma.teacherMemory.findUnique({ where: { teacherId } })
-    const style = (memory?.styleProfile as Record<string, string>)?.style ?? dto.style
-    return this.ai.generateLessonFull(dto, style)
+    const memoryContext = await this.memory.getContext(teacherId)
+    return this.ai.generateLessonFull(dto, memoryContext || undefined)
   }
 
   async create(dto: CreateLessonDto, teacherId: string) {
@@ -35,7 +37,7 @@ export class LessonsService {
         teacherId,
       },
     })
-    this.updateMemoryAsync(teacherId, dto.subject, content).catch(() => null)
+    this.memory.updateAfterLesson(teacherId, dto.subject, content).catch(() => null)
     return lesson
   }
 
@@ -147,19 +149,4 @@ export class LessonsService {
     </body></html>`
   }
 
-  private async updateMemoryAsync(teacherId: string, subject: string, content: LessonPlan) {
-    const difficulty = content.estimatedDifficulty
-    await this.prisma.teacherMemory.upsert({
-      where: { teacherId },
-      create: {
-        teacherId,
-        subjects: [subject],
-        styleProfile: { avgDifficulty: difficulty },
-      },
-      update: {
-        subjects: { push: subject },
-        styleProfile: { avgDifficulty: difficulty },
-      },
-    })
-  }
 }

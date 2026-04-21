@@ -4,9 +4,14 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { AIProvider } from './ai-provider.interface'
 import type { LessonPlan, GenerateLessonInput } from '@happyteach/types'
 
-const SYSTEM_PROMPT = `Bạn là chuyên gia thiết kế giáo án cho giáo viên Việt Nam theo chương trình GDPT 2018.
+const BASE_SYSTEM_PROMPT = `Bạn là chuyên gia thiết kế giáo án cho giáo viên Việt Nam theo chương trình GDPT 2018.
 Luôn trả về JSON hợp lệ theo đúng cấu trúc được yêu cầu. Nội dung bằng tiếng Việt.
 Giáo án phải thực tế, phù hợp lứa tuổi, và có thể triển khai được trong lớp học.`
+
+function buildSystemPrompt(memoryContext?: string): string {
+  if (!memoryContext) return BASE_SYSTEM_PROMPT
+  return `${BASE_SYSTEM_PROMPT}\n\n${memoryContext}`
+}
 
 @Injectable()
 export class ClaudeProvider implements AIProvider {
@@ -18,12 +23,12 @@ export class ClaudeProvider implements AIProvider {
     this.client = new Anthropic({ apiKey: config.getOrThrow('ANTHROPIC_API_KEY') })
   }
 
-  async *generateLessonStream(input: GenerateLessonInput, style?: string): AsyncIterable<string> {
+  async *generateLessonStream(input: GenerateLessonInput, memoryContext?: string): AsyncIterable<string> {
     const stream = this.client.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
-      system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-      messages: [{ role: 'user', content: this.buildPrompt(input, style) }],
+      system: [{ type: 'text', text: buildSystemPrompt(memoryContext), cache_control: { type: 'ephemeral' } }],
+      messages: [{ role: 'user', content: this.buildPrompt(input) }],
     })
 
     for await (const event of stream) {
@@ -36,13 +41,13 @@ export class ClaudeProvider implements AIProvider {
     }
   }
 
-  async generateLessonFull(input: GenerateLessonInput, style?: string): Promise<LessonPlan> {
+  async generateLessonFull(input: GenerateLessonInput, memoryContext?: string): Promise<LessonPlan> {
     const start = Date.now()
     const response = await this.client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
-      system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-      messages: [{ role: 'user', content: this.buildPrompt(input, style) }],
+      system: [{ type: 'text', text: buildSystemPrompt(memoryContext), cache_control: { type: 'ephemeral' } }],
+      messages: [{ role: 'user', content: this.buildPrompt(input) }],
     })
 
     this.logger.log(`Claude lesson generation: ${Date.now() - start}ms`)
@@ -50,7 +55,7 @@ export class ClaudeProvider implements AIProvider {
     return this.parseLesson(text)
   }
 
-  private buildPrompt(input: GenerateLessonInput, style?: string): string {
+  private buildPrompt(input: GenerateLessonInput): string {
     const phaseTime = input.duration === 45
       ? 'Khởi động: 5 phút, Hình thành kiến thức: 20 phút, Luyện tập: 15 phút, Vận dụng: 5 phút'
       : 'Khởi động: 10 phút, Hình thành kiến thức: 35 phút, Luyện tập: 30 phút, Vận dụng: 15 phút'
@@ -59,7 +64,6 @@ export class ClaudeProvider implements AIProvider {
 - Môn: ${input.subject}, Lớp ${input.grade}
 - Bài/Chương: ${input.chapter}
 - Thời lượng: ${input.duration} phút (${phaseTime})
-${style ? `- Phong cách giảng dạy của giáo viên: ${style}` : ''}
 
 Trả về JSON theo cấu trúc sau (không có markdown, chỉ JSON thuần):
 {
